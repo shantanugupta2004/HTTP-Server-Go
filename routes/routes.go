@@ -26,5 +26,7 @@ func SetupRoutes() *mux.Router{
 	r.HandleFunc("/upload", middlewares.JWTMiddleware(handlers.UploadFileHandler)).Methods("POST")
 	r.HandleFunc("/getFiles", handlers.GetFilesHandler).Methods("GET")
 	r.HandleFunc("/getUserFiles", middlewares.JWTMiddleware(handlers.GetFilesbyUserHandler)).Methods("GET")
+	r.HandleFunc("/downloadFile", middlewares.JWTMiddleware(handlers.DownloadFileHandler)).Methods("GET")
+	r.HandleFunc("/deleteFile", middlewares.JWTMiddleware(handlers.DeleteFileHandler)).Methods("DELETE")
 	return r
 }

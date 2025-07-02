@@ -86,3 +86,40 @@ func GetFilesbyUserHandler(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(files)
 }
+
+func DownloadFileHandler(w http.ResponseWriter, r *http.Request){
+	fileName := r.URL.Query().Get("name")
+	if fileName==""{
+		http.Error(w, "Missing file name", http.StatusBadRequest)
+		return
+	}
+	filePath := filepath.Join("uploads", fileName)
+	http.ServeFile(w, r, filePath)
+}
+
+func DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Query().Get("name")
+	if fileName == "" {
+		http.Error(w, "Missing file name", http.StatusBadRequest)
+		return
+	}
+
+	userEmail := middlewares.GetUserEmailFromRequest(r)
+	var user models.User
+	database.DB.First(&user, "email = ?", userEmail)
+
+	var file models.File
+	result := database.DB.First(&file, "file_name = ? AND user_id = ?", fileName, user.ID)
+	if result.Error != nil {
+		http.Error(w, "File not found or unauthorized", http.StatusNotFound)
+		return
+	}
+
+	err := os.Remove(file.FilePath)
+	if err != nil {
+		http.Error(w, "Failed to delete file", http.StatusInternalServerError)
+		return
+	}
+	database.DB.Delete(&file)
+	fmt.Fprintf(w, "File '%s' deleted successfully", fileName)
+}
