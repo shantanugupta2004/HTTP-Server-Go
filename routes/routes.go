@@ -23,5 +23,6 @@ func SetupRoutes() *mux.Router{
 	r.HandleFunc("/register", handlers.RegisterHandler).Methods("POST")
 	r.HandleFunc("/login", handlers.LoginHandler).Methods("POST")
 	r.HandleFunc("/profile", middlewares.JWTMiddleware(handlers.ProfileHandler)).Methods("GET")
+	r.HandleFunc("/upload", middlewares.JWTMiddleware(handlers.UploadFileHandler)).Methods("POST")
 	return r
 }

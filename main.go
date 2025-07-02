@@ -13,6 +13,7 @@ import (
 func main(){
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{})
+	database.DB.AutoMigrate(&models.File{})
 	router := routes.SetupRoutes()
 	fmt.Println("Server running on Port 5000")
 	http.ListenAndServe(":5000", router)
