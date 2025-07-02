@@ -1,15 +1,16 @@
 package handlers
 
-import(
+import (
+	"encoding/json"
 	"fmt"
+	"http-server-go/database"
+	"http-server-go/middlewares"
+	"http-server-go/models"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
-	"http-server-go/database"
-	"http-server-go/models"
-	"http-server-go/middlewares"
 )
 
 func UploadFileHandler(w http.ResponseWriter, r *http.Request){
@@ -55,4 +56,33 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request){
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "File '%s' uploaded successfully!\n", handler.Filename)
+}
+
+func GetFilesHandler(w http.ResponseWriter, r *http.Request){
+	var files []models.File
+	result := database.DB.Find(&files)
+	if result.Error!=nil{
+		http.Error(w, "Failed to fetch files", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(files)
+}
+
+func GetFilesbyUserHandler(w http.ResponseWriter, r *http.Request){
+	userEmail := middlewares.GetUserEmailFromRequest(r)
+	var user models.User
+	result:= database.DB.First(&user, "email = ?", userEmail)
+	if result.Error != nil {
+        http.Error(w, "User not found", http.StatusUnauthorized)
+        return
+    }
+	var files []models.File
+	result2 := database.DB.Where("user_id = ?", user.ID).Find(&files)
+	if result2.Error!=nil{
+		http.Error(w, "Failed to fetch files", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(files)
 }
