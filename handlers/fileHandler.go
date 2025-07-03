@@ -6,6 +6,7 @@ import (
 	"http-server-go/database"
 	"http-server-go/middlewares"
 	"http-server-go/models"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"os"
@@ -47,6 +48,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request){
 		FilePath:   filePath,
 		FileSize:   fileSize,
 		UploadedAt: time.Now(),
+		IsShared:   false,
 		UserID:     user.ID,
 	}
 	saveErr := database.DB.Create(&newFile).Error
@@ -122,4 +124,45 @@ func DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	database.DB.Delete(&file)
 	fmt.Fprintf(w, "File '%s' deleted successfully", fileName)
+}
+
+func GenerateShareLinkHandler(w http.ResponseWriter, r *http.Request){
+	fileName := r.URL.Query().Get("name")
+	if fileName==""{
+		http.Error(w, "File name missing", http.StatusBadRequest)
+		return
+	}
+	userEmail := middlewares.GetUserEmailFromRequest(r)
+	var user models.User
+	err:= database.DB.First(&user, "email = ?", userEmail).Error
+	if err!=nil{
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+	var file models.File
+	err2 := database.DB.First(&file, "file_name = ? AND user_id = ?", fileName, user.ID).Error
+	if err2!=nil{
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+	file.ShareToken = uuid.New().String()
+	file.IsShared = true
+	database.DB.Save(&file)
+	shareURL := fmt.Sprintf("http://localhost:5000/share/%s", file.ShareToken)
+	json.NewEncoder(w).Encode(map[string]string{"url": shareURL})
+}
+
+func ShareDownloadHandler(w http.ResponseWriter, r *http.Request){
+	token := r.URL.Path[len("/share/"):]
+	if token==""{
+		http.Error(w, "Missing share token", http.StatusBadRequest)
+		return
+	}
+	var file models.File
+	err:= database.DB.First(&file, "share_token = ? AND is_shared = ?", token, true).Error
+	if err!=nil{
+		http.Error(w, "Invalid or expired share link", http.StatusNotFound)
+		return
+	}
+	http.ServeFile(w, r, file.FilePath)
 }

@@ -10,5 +10,7 @@ type File struct{
 	FilePath string
 	FileSize int64
 	UploadedAt time.Time
+	IsShared bool
+	ShareToken string
 	UserID uint
 }
