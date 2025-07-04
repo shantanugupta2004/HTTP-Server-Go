@@ -2,12 +2,12 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -20,10 +20,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     env:
       DB_HOST: localhost
@@ -33,20 +33,23 @@ jobs:
       DB_NAME: go_db
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.22
 
-      - name: Install dependencies
-        run: go mod download
+    - name: Install dependencies
+      run: go mod download
 
-      - name: Build app
-        run: go build -v ./...
+    - name: Wait for Postgres
+      run: |
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for Postgres..."
+          sleep 2
+        done
 
-      - name: Run tests (if any)
-        run: |
-          go test ./tests/... || echo "⚠️ No tests found, skipping test step"
+    - name: Run tests
+      run: go test ./tests/...

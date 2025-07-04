@@ -5,9 +5,17 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"http-server-go/database"
+	"http-server-go/models"
 	"http-server-go/routes"
 	"testing"
 )
+
+func init() {
+	// Connect to the database and migrate tables for tests
+	database.Connect()
+	database.DB.AutoMigrate(&models.User{})
+}
 
 func TestRegisterUser(t *testing.T) {
 	router := routes.SetupRoutes()
