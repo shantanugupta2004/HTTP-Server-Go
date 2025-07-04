@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:15
@@ -15,7 +17,7 @@ services:
     depends_on:
       - db
     ports:
-      - "5000:5000"
+      - "5000:5000" # Go app port
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -24,5 +26,20 @@ services:
       DB_NAME: go_db
     restart: always
 
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
 volumes:
   pgdata:
+  grafana-storage:
