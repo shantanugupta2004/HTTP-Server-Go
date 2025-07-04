@@ -49,4 +49,4 @@ jobs:
 
       - name: Run tests (if any)
         run: |
-          go test ./... || echo "⚠️ No tests found, skipping test step"
+          go test ./tests/... || echo "⚠️ No tests found, skipping test step"

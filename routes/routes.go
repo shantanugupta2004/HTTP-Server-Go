@@ -9,7 +9,7 @@ import (
 func SetupRoutes() *mux.Router{
 	r:= mux.NewRouter()
 	r.Use(middlewares.LoggingMiddleware)
-	
+	r.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
 	r.HandleFunc("/greet", handlers.GreetHandler).Methods("GET")
