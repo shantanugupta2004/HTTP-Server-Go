@@ -84,7 +84,7 @@ func TestUploadFile(t *testing.T) {
 func TestListFiles(t *testing.T) {
 	router := routes.SetupRoutes()
 
-	req := httptest.NewRequest("GET", "/files", nil)
+	req := httptest.NewRequest("GET", "/getFiles", nil)
 	req.Header.Set("Authorization", "Bearer "+authToken)
 
 	resp := httptest.NewRecorder()
