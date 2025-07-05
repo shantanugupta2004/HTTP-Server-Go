@@ -20,36 +20,29 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    env:
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: go_db
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
 
-    - name: Install dependencies
-      run: go mod download
+      - name: Build Docker containers
+        run: docker-compose build
 
-    - name: Wait for Postgres
-      run: |
-        until pg_isready -h localhost -p 5432 -U postgres; do
-          echo "Waiting for Postgres..."
-          sleep 2
-        done
+      - name: Start containers
+        run: docker-compose up -d
 
-    - name: Run tests
-      run: go test ./tests/...
+      - name: Wait for app to start
+        run: sleep 10
+
+      - name: Run tests inside app container
+        run: docker exec $(docker ps -qf "ancestor=http-server-go_app") go test ./tests/...
+
