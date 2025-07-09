@@ -1,21 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../utils/api";
 
 const FileUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!file) {
-      setMessage("Please select a file to upload.");
+      setMessage("⚠️ Please select a file to upload.");
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setMessage("You must be logged in to upload files.");
+      setMessage("❌ You must be logged in to upload files.");
+      navigate("/login");
       return;
     }
 
@@ -26,14 +36,14 @@ const FileUpload = () => {
       await API.post("/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "Authorization": `Bearer ${token}`
-        }
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
-      setMessage("File uploaded successfully!");
+      setMessage("✅ File uploaded successfully!");
       setFile(null);
     } catch (err: any) {
-      setMessage(`Upload failed: ${err.response?.data?.error || "Unknown error"}`);
+      setMessage(`❌ Upload failed: ${err.response?.data?.error || "Unknown error"}`);
     }
   };
 
