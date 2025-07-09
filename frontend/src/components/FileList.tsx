@@ -34,19 +34,57 @@ const FileList = () => {
       return;
     }
 
-    API
-      .get("/getFiles", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    API.get("/getFiles", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((res) => setFiles(res.data))
       .catch((err) =>
-        setError(` Failed to fetch files: ${err.response?.data?.error || "Unknown error"}`)
+        setError(
+          `Failed to fetch files: ${
+            err.response?.data?.error || "Unknown error"
+          }`
+        )
       );
   }, []);
 
+  const handleDownload = async (fileName: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to download files.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/downloadFile?name=${encodeURIComponent(fileName)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error downloading file");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4 text-center">📁 Your Files</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">Your Files</h2>
 
       {error && <p className="text-red-600 text-center">{error}</p>}
 
@@ -65,21 +103,21 @@ const FileList = () => {
             <tr key={file.id} className="text-center">
               <td className="p-2 border">{file.fileName}</td>
               <td className="p-2 border">{formatSize(file.fileSize)}</td>
-              <td className="p-2 border">{new Date(file.uploadedAt).toLocaleString()}</td>
               <td className="p-2 border">
-                <a
-                  href={`http://localhost:5000/${file.filePath}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                {new Date(file.uploadedAt).toLocaleString()}
+              </td>
+              <td className="p-2 border">
+                <button
+                  onClick={() => handleDownload(file.fileName)}
                   className="text-blue-600 hover:underline"
                 >
                   Download
-                </a>
+                </button>
               </td>
               <td className="p-2 border">
                 {file.isShared ? (
                   <a
-                    href={`http://localhost:5000/shared/${file.shareToken}`}
+                    href={`http://localhost:5000/share/${file.shareToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-green-600 hover:underline"
