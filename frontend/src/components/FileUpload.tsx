@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../utils/api";
+import API from "../../utils/api"; // Adjust if path differs
 
 const FileUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -33,17 +33,17 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
-      await API.post("/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
+      console.log("Uploading file with token:", token);
 
-      setMessage("✅ File uploaded successfully!");
+      const response = await API.post("/upload", formData);
+
+      setMessage(response.data.message || "✅ File uploaded successfully!");
       setFile(null);
     } catch (err: any) {
-      setMessage(`❌ Upload failed: ${err.response?.data?.error || "Unknown error"}`);
+      console.error("Upload error:", err);
+      setMessage(
+        `❌ Upload failed: ${err.response?.data?.error || err.message || "Unknown error"}`
+      );
     }
   };
 
@@ -63,7 +63,19 @@ const FileUpload = () => {
           Upload
         </button>
       </form>
-      {message && <p className="mt-4 text-sm text-center">{message}</p>}
+      {message && (
+        <p
+          className={`mt-4 text-sm text-center ${
+            message.startsWith("✅")
+              ? "text-green-600"
+              : message.startsWith("⚠️")
+              ? "text-yellow-600"
+              : "text-red-600"
+          }`}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 };

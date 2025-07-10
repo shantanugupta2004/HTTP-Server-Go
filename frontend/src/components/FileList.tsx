@@ -27,7 +27,7 @@ const FileList = () => {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const fetchFiles = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setError("You must be logged in to view files.");
@@ -45,6 +45,10 @@ const FileList = () => {
           }`
         )
       );
+  };
+
+  useEffect(() => {
+    fetchFiles();
   }, []);
 
   const handleDownload = async (fileName: string) => {
@@ -82,6 +86,54 @@ const FileList = () => {
     }
   };
 
+  const handleGenerateShareLink = async (fileName: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in.");
+      return;
+    }
+
+    try {
+      const response = await API.get(`/generate-share`, {
+        params: { name: fileName },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert("✅ Share link generated!");
+      fetchFiles(); // Refresh file list to update isShared and shareToken
+    } catch (err: any) {
+      alert(
+        `❌ Failed to generate share link: ${
+          err.response?.data?.error || "Unknown error"
+        }`
+      );
+    }
+  };
+
+   const handleDelete = async (fileName: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in.");
+      return;
+    }
+
+    try {
+      const response = await API.delete(`/deleteFile`, {
+        params: { name: fileName },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert("✅ File deleted");
+      fetchFiles(); // Refresh file list to update isShared and shareToken
+    } catch (err: any) {
+      alert(
+        `❌ Failed to delete file: ${
+          err.response?.data?.error || "Unknown error"
+        }`
+      );
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4 text-center">Your Files</h2>
@@ -96,6 +148,8 @@ const FileList = () => {
             <th className="p-2 border">Uploaded</th>
             <th className="p-2 border">Download</th>
             <th className="p-2 border">Share Link</th>
+            <th className="p-2 border">Generate Link</th>
+            <th className="p-2 border">Delete</th> 
           </tr>
         </thead>
         <tbody>
@@ -126,6 +180,26 @@ const FileList = () => {
                   </a>
                 ) : (
                   <span className="text-gray-500">Private</span>
+                )}
+              </td>
+              <td className="p-2 border">
+                {!file.isShared && (
+                  <button
+                    onClick={() => handleGenerateShareLink(file.fileName)}
+                    className="text-purple-600 hover:underline"
+                  >
+                    Generate
+                  </button>
+                )}
+              </td>
+              <td className="p-2 border">
+                {(
+                  <button
+                    onClick={() => handleDelete(file.fileName)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
                 )}
               </td>
             </tr>
