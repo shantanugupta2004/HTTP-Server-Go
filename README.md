@@ -173,7 +173,7 @@ docker-compose up --build
 
 ---
 
-### 📤 File Upload
+### File Upload
 
 #### `POST /upload`
 - **Description**: Upload a `.txt` file (authenticated).
